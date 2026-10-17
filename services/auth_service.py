@@ -16,7 +16,11 @@ def register(db: Session, data: UserCreate):
 
 def authenticate(db: Session, username: str, password: str):
     user = user_repository.get_by_username(db, username)
-    if not user or not verify_password(password, user.password_hash):
+    if (
+        not user
+        or not user.is_active
+        or not verify_password(password, user.password_hash)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",

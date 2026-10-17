@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import models  # noqa: F401 - registers all models
+from core.dependencies import get_current_user
 from database import Base, get_db
 from main import app
 
@@ -46,6 +47,18 @@ def db_session():
 
 @pytest.fixture()
 def client(db_session):
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = lambda: None
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def anon_client(db_session):
     def override_get_db():
         yield db_session
 
